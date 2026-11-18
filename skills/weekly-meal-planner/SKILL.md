@@ -1,6 +1,6 @@
 ---
 name: weekly-meal-planner
-description: Sets up a household's own weekly meal planner in Claude - a shared app with a grocery checklist, recipes, a discussion board where Claude answers food questions, and editable preferences, plus a weekly scheduled task that plans varied meals, fills the app, drafts a delivery cart where a connector allows it, and emails a link. Use when someone asks to set up the weekly meal planner, a meal plan app, or a shared grocery list with weekly recipes.
+description: Sets up a household's own weekly meal planner in Claude - a shared app with a grocery checklist, recipes, saved favorites, a discussion board where Claude answers food questions, and editable preferences, plus a weekly scheduled task that plans varied meals, fills the app, drafts a delivery cart where a connector allows it, and emails a link. Use when someone asks to set up the weekly meal planner, a meal plan app, or a shared grocery list with weekly recipes.
 ---
 
 # Weekly meal planner setup
@@ -8,15 +8,16 @@ description: Sets up a household's own weekly meal planner in Claude - a shared 
 Build a private copy of the "kitchen week" app for this person and schedule a weekly planning run. Every preference comes from their answers; nothing from anyone else's household is included.
 
 Files:
-- `assets/app.html`: the app page (tabs: Groceries, Recipes, Discussion, Preferences).
+- `assets/app.html`: the app page (tabs: Groceries, Recipes, Favorites, Discussion, Preferences).
 - `references/scheduled-task-prompt.md`: the weekly task prompt, with placeholders to fill.
+- `references/prompt-modules.md`: optional add-ons (weather, use up leftovers) offered in the "Tune your plan" round.
 
-**Keep setup to three touchpoints for the person:** (1) one typed message with the essentials, (2) one round of multiple-choice questions, (3) one confirmation. Do everything else yourself, quietly. Only add a follow-up message when an answer is missing, ambiguous, or contradictory, and batch all follow-ups into one message.
+**Keep setup to three touchpoints for the person:** (1) one typed message with the essentials, (2) one round of multiple-choice questions, (3) one confirmation. After the build, offer one optional "Tune your plan" round (touchpoint 4); never make it a requirement. Do everything else yourself, quietly. Only add a follow-up message when an answer is missing, ambiguous, or contradictory, and batch all follow-ups into one message.
 
 ## Before asking anything (no questions to the person)
 
 1. Load tools with ToolSearch and check you have: the **Artifact** and **ArtifactData** tools, **scheduled tasks** (`create_trigger`, `list_triggers`, `fire_trigger`), and **Gmail** `send_message`. If Artifact or scheduled tasks are missing, explain that this needs Claude's hosted apps and scheduled tasks (for example in Cowork) and stop. If Gmail is missing, note it for touchpoint 3.
-2. Call `list_triggers` and the Artifact tool's `list` action. If a "Weekly meal plan" task or a matching app already exists, mention it in touchpoint 1 and ask whether to update it or start a separate one. Never silently create a duplicate.
+2. Call `list_triggers` and the Artifact tool's `list` action. If any task whose name starts with "Weekly meal plan", or a matching app, already exists, mention it in touchpoint 1 and ask whether to update it or start a separate one. Never silently create a duplicate.
 3. Note the session's time zone if the environment gives one.
 
 ## Touchpoint 1: one typed message
@@ -25,7 +26,7 @@ Open with what they'll get, then ask, with a short reason beside each question s
 
 > Here's what you'll have when we're done:
 > - **A plan every week, without you thinking about it.** Each week Claude picks a fresh set of dinners, plus breakfasts and quick lunches, that fit your household and don't repeat what you've had lately.
-> - **A shared app** with the recipes (ingredients, steps, and times), a grocery checklist you and anyone you share it with can check off in the store, and a place to ask questions or leave notes for next week.
+> - **A shared app** with the recipes (ingredients, steps, and times), a grocery checklist you and anyone you share it with can check off in the store, a place to ask questions or leave notes for next week, and a star to save the recipes you love so Claude brings them back and plans more like them.
 > - **An email with the link**, so the week is ready before you shop. If you use Instacart, Claude can also fill your cart for you to review.
 >
 > It takes three quick replies. First, tell me:
@@ -76,16 +77,18 @@ On "Change something", make the edits and confirm again. Build only after a "Loo
 
 ## Build (no questions to the person)
 
-1. **Publish the app.** Copy `assets/app.html` to your working directory and publish it with the Artifact tool:
+1. **Publish the app.** Copy `assets/app.html` to your working directory. The app is titled "Our Kitchen Week"; if this account already has a meal-plan app (from the pre-checks), give this one a distinct title that the person chose or that names the household (e.g. "The Rivera Kitchen Week"), changing both `<title>` and the `<h1>` in your copy. Keep the title as `{{APP_NAME}}`. Publish it with the Artifact tool:
    - `capabilities`: `{"db": {}, "user": {"scopes": ["profile"]}, "sample": {}}`
-   - `icon`: `"cart"`, `description`: "Weekly meal plan hub: shared grocery checklist, recipes, discussion with Claude, and preferences."
+   - `icon`: `"cart"`, `description`: "Weekly meal plan hub: shared grocery checklist, recipes, saved favorites, discussion with Claude, and preferences."
    - Keep the returned URL as `{{APP_URL}}`.
-2. **Load preferences** with one ArtifactData `batch`:
+   - **Check the capabilities took.** Some Artifact tools publish without accepting `capabilities` (the result may warn that the page uses `db` but doesn't declare it). If so, declare the same capabilities in a separate call right after publishing (for example `declare_capabilities` with the version the publish returned). Then read the declaration back and confirm `db`, `user`, and `sample` are present before writing any data. Without `db` the app can't save anything.
+2. **Load preferences** with one ArtifactData `batch` (on servers without ArtifactData, the same writes with `db_write`):
    - `prefs`/`standing`: `{"sections": [{"title": "...", "items": ["..."]}, ...], "updatedAt": "<now ISO>"}` with these titles where they apply: "Household", "Location", "Allergies and never include", "Diet", "Variety", "Favorites", "Weekly structure", "Shopping", "Email recipients". Record each child's birth month and year, not an age. Variety holds the repeat window, cuisine range, spice, favorites cap, and meat and fish dinners per week. Shopping holds the store, the delivery service if any, and "Draft the cart each week" if a cart connector is connected.
-   - `meta`/`current`: `{"week": "", "store": "<store or service>", "summary": "Your first plan is on its way.", "onHand": "", "prepAhead": [], "notesReadThrough": "<now ISO>", "orderService": "<delivery service or empty>", "orderUrl": "", "orderNote": ""}`
+   - `meta`/`current`: `{"week": "", "store": "<store or service>", "summary": "Your first plan is on its way.", "onHand": "", "prepAhead": [], "notesReadThrough": "<now ISO>", "orderService": "<delivery service or empty>", "orderUrl": "", "orderNote": "", "favoritesTake": ""}`
    - If they named meals they're tired of, add `history`/<last Monday as YYYY-MM-DD> with those dinners so the first plan avoids them.
+   - Don't create any `favorites` documents. The favorite meals they typed live in the Favorites preference section; the `favorites` collection fills up as they star recipes in the app.
    Read `prefs`/`standing` back once to confirm it saved.
-3. **Schedule.** Fill `references/scheduled-task-prompt.md` (replace `{{APP_URL}}`, `{{APP_NAME}}`, `{{FALLBACK_EMAILS}}`; check no `{{` remains) and call `create_trigger` with name "Weekly meal plan", `cron_expression` in their time zone (e.g. `CRON_TZ=America/Chicago 47 7 * * 0`, avoiding minute 0), the filled prompt, `initiation: human_request`, and `requires_local_device` unset.
+3. **Schedule.** Fill `references/scheduled-task-prompt.md` (fill `{{APP_URL}}`, `{{APP_NAME}}`, and `{{FALLBACK_EMAILS}}`, replace `{{EXTRA_RULES}}` with an empty string, and check no `{{` remains) and call `create_trigger` with name "Weekly meal plan: {{APP_NAME}}" (task names must be unique, so a second household or a reinstall never collides with an earlier task), `cron_expression` in their time zone (e.g. `CRON_TZ=America/Chicago 47 7 * * 0`, avoiding minute 0), the filled prompt, `initiation: human_request`, and `requires_local_device` unset. Keep the returned task id.
 4. **First plan.** If they chose "make this week's plan now", call `fire_trigger`.
 
 ## Wrap up (one message)
@@ -93,7 +96,26 @@ On "Change something", make the edits and confirm again. Build only after a "Loo
 Keep it short:
 - The app is in the publish card above and is private to them.
 - To share with a partner or housemate: open the app, tap Share, invite them by email as an **Editor**, and don't turn on a public link. Each person needs a Claude account.
-- The week: post notes (nights out, guests, what's already in the fridge) and feedback in Discussion before the next plan; check items off in Groceries; edit preferences any time.
+- The week: post notes (nights out, guests, what's already in the fridge) and feedback in Discussion before the next plan; check items off in Groceries; tap the star on any recipe they love to save it to Favorites, where Claude brings it back now and then and plans more dishes like it; edit preferences any time.
 - If a delivery cart is set up: each week's email and the Groceries tab link to the cart; they review and check out themselves. Claude never places the order.
 - Whether the task's runs approve automatically; if not, they should turn on automatic approval in the task's settings so it can run while they're away.
 - If they fired the first plan: it runs in its own session and the email arrives in a few minutes.
+- End with the touchpoint 4 offer below.
+
+## Touchpoint 4 (optional): tune your plan
+
+People react better to real recipes than to settings, so offer tuning once there is a plan to react to.
+
+1. **Wait for the plan.** If they fired the first plan, check `meta`/`current` about every 2 minutes (up to about 10 minutes) until `week` is filled in, then read the `recipes` collection. Give a two-line recap: the dinners with their cuisines. If the plan isn't there after 10 minutes, or they chose the scheduled first plan, offer tuning anyway and say the plan will reflect it.
+2. **Ask one multiple-choice round** with AskUserQuestion (`multiSelect: true`), question text starting with why it matters: "Want to tune it? Each pick changes every future plan." Options, recommended first:
+   - "Match the weather": warmer food on cold or rainy weeks, big salads when it's warm.
+   - "Use up leftovers": carries last week's extras into the next plan and buys whole units with less waste.
+   - "Sourcing rules": organic, grass-fed, no seed oils, or anything else they buy by.
+   - "Goals or cooking rules": e.g. high protein, more greens, a cooking technique they always want.
+   They can also type "Other", or skip.
+3. **Ask only what's left, in one message.** Sourcing rules, goals, cooking rules, and "Other" need their words; weather may need a warm-day threshold if their climate makes 73F wrong. Skip the message if nothing needs detail.
+4. **Apply every answer where the weekly run will read it.** Anything said in chat and not saved is lost by the next plan.
+   - Preferences: add or update sections "Goals", "Sourcing rules", or "Cooking rules" in `prefs`/`standing` (read it first for its version), one line per rule in their words. Put a weather threshold in "Location".
+   - Modules: for "Match the weather" and "Use up leftovers", read the task's prompt with `list_triggers`, insert the module text from `references/prompt-modules.md` as that file explains, and save it with `update_trigger`. Check the module isn't already there.
+   - Post one `update` to `posts` (author "claude") listing what changed, so everyone in the app sees it.
+5. **Confirm in two lines:** what changed, and that later tweaks work the same way. They can post feedback in Discussion or edit Preferences, and standing requests in Discussion are turned into Preferences lines by asking Claude here.
