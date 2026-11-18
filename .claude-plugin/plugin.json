@@ -1,0 +1,9 @@
+{
+  "name": "kitchen-week",
+  "displayName": "Kitchen Week",
+  "version": "1.0.0",
+  "description": "A weekly meal planner for your household: Claude plans varied dinners, breakfasts, and lunches around your diet, allergies, and favorites, fills a shared app with recipes and a grocery checklist you can check off together, drafts an Instacart cart when connected, and emails you a link each week.",
+  "author": { "name": "Lexi Cardia" },
+  "license": "MIT",
+  "keywords": ["meal planning", "recipes", "grocery list", "family", "cooking"]
+}
