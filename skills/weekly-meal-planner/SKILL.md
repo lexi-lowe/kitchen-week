@@ -8,7 +8,7 @@ description: Sets up a household's own weekly meal planner in Claude - a shared 
 Build a private copy of the "kitchen week" app for this person and schedule a weekly planning run. Every preference comes from their answers; nothing from anyone else's household is included.
 
 Files:
-- `assets/app.html`: the app page (tabs: Groceries, Recipes, Favorites, Discussion, Preferences).
+- `assets/app.html`: the app page (tabs: Groceries, Recipes, Discussion, Preferences, Favorites).
 - `references/scheduled-task-prompt.md`: the weekly task prompt, with placeholders to fill.
 - `references/prompt-modules.md`: optional add-ons (weather, use up leftovers) offered in the "Tune your plan" round.
 
