@@ -1,0 +1,782 @@
+<title>Our Kitchen Week</title>
+<meta name="kitchen-week-version" content="1.1.0">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column; sticky header with week + tab bar; each tab is a stacked list of quiet panels. */
+:root {
+  --bg: #f6f7f3;
+  --surface: #ffffff;
+  --ink: #1d2420;
+  --muted: #5f6b63;
+  --line: #dfe4dc;
+  --accent: #2e6b45;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3efe6;
+  --chip: #eef1ea;
+  --chip-ink: #46524a;
+  --warn: #9a4a1c;
+  --done: #9aa59d;
+  --claude: #f3ede4;
+  --fav: #a86b12;
+  --font-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131815; --surface: #1b211d; --ink: #e8ece8; --muted: #9aa69e; --line: #2c3530;
+    --accent: #7cc196; --accent-ink: #10170f; --accent-soft: #1f3327; --chip: #232b26; --chip-ink: #b7c2ba;
+    --warn: #e3a072; --done: #5f6b63; --claude: #26231e; --fav: #e8b75a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131815; --surface: #1b211d; --ink: #e8ece8; --muted: #9aa69e; --line: #2c3530;
+  --accent: #7cc196; --accent-ink: #10170f; --accent-soft: #1f3327; --chip: #232b26; --chip-ink: #b7c2ba;
+  --warn: #e3a072; --done: #5f6b63; --claude: #26231e; --fav: #e8b75a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap {
+  max-width: 680px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+}
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 16px 0; border-bottom: 1px solid var(--line); }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.week { color: var(--muted); font-size: 14px; }
+nav { display: flex; gap: 4px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; }
+nav a {
+  font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--muted); text-decoration: none;
+  padding: 8px 12px 10px; border-bottom: 3px solid transparent; white-space: nowrap;
+}
+nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav a .badge { font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 4px; font-variant-numeric: tabular-nums; }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 7px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.danger { color: var(--warn); }
+.btn:disabled { opacity: .55; cursor: default; }
+.status { margin-top: 20px; color: var(--muted); font-size: 15px; }
+.status strong { color: var(--ink); }
+h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 13px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; display: flex; justify-content: space-between; gap: 8px;
+}
+h2 .n { font-variant-numeric: tabular-nums; letter-spacing: 0; }
+section.block { margin-top: 26px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+input[type=text], select, textarea {
+  font: inherit; font-size: 15px; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); min-width: 0;
+}
+textarea { width: 100%; resize: vertical; line-height: 1.45; }
+
+/* Groceries */
+.progress { margin-top: 18px; display: flex; align-items: center; gap: 12px; }
+.bar { flex: 1; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .25s ease; }
+.count { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.tools { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+.confirm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.add { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; margin-top: 16px; }
+@media (max-width: 460px) { .add { grid-template-columns: 1fr 1fr; } .add input { grid-column: 1 / -1; } }
+ul.items { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+ul.items li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 12px 12px 14px; border-top: 1px solid var(--line); }
+ul.items li:first-child { border-top: 0; }
+.check { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); background: transparent; display: grid; place-items: center; padding: 0; margin-top: 1px; color: var(--accent-ink); }
+.check:hover { border-color: var(--accent); }
+.check svg { width: 14px; height: 14px; opacity: 0; }
+li.done .check { background: var(--accent); border-color: var(--accent); }
+li.done .check svg { opacity: 1; }
+.ibody { flex: 1; min-width: 0; cursor: pointer; }
+.name { font-weight: 500; overflow-wrap: anywhere; }
+.qty { color: var(--muted); font-weight: 400; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; align-items: center; }
+.chip { font-size: 12px; background: var(--chip); color: var(--chip-ink); padding: 2px 8px; border-radius: 99px; }
+.by { font-size: 12px; color: var(--muted); }
+li.done .name, li.done .qty { color: var(--done); text-decoration: line-through; }
+li.done .chip { opacity: .6; }
+.rm { flex: none; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 2px 4px; border-radius: 6px; }
+.rm:hover { color: var(--warn); }
+
+/* Recipes */
+.summary { margin-top: 18px; font-size: 16px; }
+.toc { padding: 6px 0; }
+.toc-group { padding: 8px 14px; }
+.toc-group + .toc-group { border-top: 1px solid var(--line); }
+.toc-group h3 { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 4px 0 4px; }
+.toc ol { margin: 0; padding-left: 22px; }
+.toc li { padding: 3px 0; }
+.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.toc a:hover { border-bottom-color: var(--accent); }
+.toc .sub { color: var(--muted); font-size: 14px; }
+details.recipe { border-top: 1px solid var(--line); }
+details.recipe:first-child { border-top: 0; }
+details.recipe > summary { list-style: none; cursor: pointer; padding: 14px; display: flex; gap: 12px; align-items: baseline; justify-content: space-between; }
+details.recipe > summary::-webkit-details-marker { display: none; }
+details.recipe > summary .t { font-weight: 600; font-family: var(--font-display); font-size: 17px; }
+details.recipe > summary .s { color: var(--muted); font-size: 13px; display: block; font-family: var(--font-body); font-weight: 400; }
+details.recipe > summary .chev { flex: none; color: var(--muted); transition: transform .2s ease; }
+details.recipe[open] > summary .chev { transform: rotate(90deg); }
+.rbody { padding: 0 14px 16px; min-width: 0; }
+.rbody h4 { font-family: var(--font-display); font-size: 14px; margin: 14px 0 6px; }
+.rbody ul, .rbody ol { margin: 0; padding-left: 22px; }
+.rbody li { padding: 2px 0; }
+.times { display: flex; flex-wrap: wrap; gap: 6px; }
+.baby { margin-top: 14px; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+.baby b { color: var(--accent); }
+.prep { padding: 12px 14px; }
+.onhand-text { margin: 0 0 12px; }
+.secadd { display: flex; gap: 8px; padding: 8px 12px 10px 14px; border-top: 1px solid var(--line); }
+.secadd input { flex: 1; font-size: 14px; padding: 7px 10px; }
+.secadd .btn { padding: 6px 10px; }
+.order { margin-top: 16px; padding: 12px 14px; display: grid; gap: 8px; }
+.order .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.order a.btn { text-decoration: none; display: inline-block; }
+.order textarea { font-size: 13px; }
+.prep ul { margin: 0; padding-left: 20px; }
+
+/* Favorites */
+.star { flex: none; width: 44px; height: 44px; margin: -10px -6px -10px 0; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; border-radius: 10px; align-self: center; }
+.star:hover { color: var(--fav); }
+.star[aria-pressed="true"] { color: var(--fav); }
+.star svg { width: 22px; height: 22px; }
+details.recipe > summary .t { flex: 1; min-width: 0; }
+details.recipe > summary .chev { align-self: center; }
+.saved { margin-top: 2px; margin-bottom: 12px; background: var(--accent-soft); border-radius: 10px; padding: 10px 12px; }
+.saved .h { font-size: 13px; font-weight: 600; color: var(--accent); }
+.saved label { display: block; margin-top: 8px; font-size: 13px; color: var(--chip-ink); }
+.saved input { width: 100%; margin-top: 4px; font-size: 14px; padding: 9px 10px; }
+.saved .hint { display: block; margin-top: 6px; font-size: 12px; }
+.fnote { margin: 6px 0 0; font-size: 15px; font-family: var(--font-body); font-weight: 400; }
+.filters { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.take { background: var(--claude); border-radius: 12px; padding: 12px 14px; font-size: 15px; }
+.take p { margin: 0; }
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(20, 26, 22, .4); display: flex; align-items: flex-end; justify-content: center; }
+.scrim[hidden] { display: none; }
+.sheet { background: var(--surface); width: 100%; max-width: 680px; border-radius: 18px 18px 0 0; padding: 20px 16px calc(24px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+.sheet h3 { font-family: var(--font-display); font-size: 20px; margin: 0; }
+.sheet p { margin: 0; color: var(--chip-ink); }
+.reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.reasons .btn { border-radius: 99px; }
+.sheet .acts { display: flex; gap: 8px; }
+.sheet .acts .btn { flex: 1; padding: 12px; font-weight: 600; }
+.btn.remove { background: var(--warn); border-color: var(--warn); color: #ffffff; }
+.readonly .star, .readonly .saved input, .readonly .saved .hint { display: none; }
+
+/* Discussion */
+.thread { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.post { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.post.claude { background: var(--claude); }
+.post.reply { margin-left: 22px; }
+.phead { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.phead .who { font-weight: 600; color: var(--ink); font-size: 14px; }
+.ptext { margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.wk { font-family: var(--font-display); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 10px 0 0; }
+.composer { margin-top: 16px; padding: 12px; display: grid; gap: 8px; }
+.crow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.hint { font-size: 13px; color: var(--muted); }
+
+/* Preferences */
+.howto { padding: 14px; }
+.howto ol { margin: 6px 0 0; padding-left: 22px; }
+.howto li { padding: 3px 0; }
+.howto a { color: var(--accent); }
+.pref { padding: 12px 14px; border-top: 1px solid var(--line); }
+.pref:first-child { border-top: 0; }
+.pref h3 { font-family: var(--font-display); font-size: 16px; margin: 0 0 4px; }
+.pref ul { margin: 0; padding-left: 20px; }
+.pref li { padding: 2px 0; overflow-wrap: anywhere; }
+.note { margin-top: 28px; font-size: 13px; color: var(--muted); }
+.readonly .rm, .readonly .add, .readonly .secadd, .readonly .composer, .readonly .editPrefs { display: none; }
+@media (prefers-reduced-motion: reduce) { .bar > span, details.recipe > summary .chev { transition: none; } }
+</style>
+
+<div class="wrap" id="app">
+  <header>
+    <div class="top">
+      <h1>Our Kitchen Week</h1>
+      <span class="week" id="week">This week</span>
+    </div>
+    <nav aria-label="Sections">
+      <a href="#groceries" data-tab="groceries">Groceries<span class="badge" id="bGroc"></span></a>
+      <a href="#recipes" data-tab="recipes">Recipes<span class="badge" id="bRec"></span></a>
+      <a href="#discussion" data-tab="discussion">Discussion<span class="badge" id="bDisc"></span></a>
+      <a href="#preferences" data-tab="preferences">Preferences</a>
+      <a href="#favorites" data-tab="favorites">Favorites<span class="badge" id="bFav"></span></a>
+    </nav>
+  </header>
+
+  <main>
+    <div id="tab-groceries" data-panel="groceries">
+      <div class="panel order" id="orderBar" hidden>
+        <span id="orderText"></span>
+        <div class="row">
+          <a class="btn primary" id="orderLink" href="#" target="_blank" rel="noopener" hidden>Review cart</a>
+          <button class="btn" type="button" id="copyList">Copy list</button>
+          <span class="hint" id="copyHint"></span>
+        </div>
+        <textarea id="copyBox" rows="6" readonly hidden aria-label="Grocery list to copy"></textarea>
+      </div>
+      <div class="progress">
+        <div class="bar" aria-hidden="true"><span id="barFill"></span></div>
+        <span class="count" id="count">0 of 0</span>
+      </div>
+      <form class="add" id="addForm" autocomplete="off">
+        <input id="addName" type="text" placeholder="Add an item, e.g. paper towels" aria-label="Item to add" maxlength="120">
+        <select id="addSection" aria-label="Section"></select>
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+      <p class="status" id="gStatus">Loading this week's list…</p>
+      <div id="gList"></div>
+    </div>
+
+    <div id="tab-recipes" data-panel="recipes" hidden>
+      <p class="summary" id="rSummary"></p>
+      <p class="status" id="rStatus">Loading this week's recipes…</p>
+      <div id="rGroups"></div>
+      <section class="block" id="onHandBlock">
+        <h2><span>Already on hand</span></h2>
+        <div class="panel prep">
+          <p id="onHand" class="onhand-text" style="margin:0"></p>
+        </div>
+      </section>
+      <section class="block" id="prepBlock" hidden>
+        <h2><span>Prep ahead</span></h2>
+        <div class="panel prep"><ul id="prepList"></ul></div>
+      </section>
+    </div>
+
+    <div id="tab-favorites" data-panel="favorites" hidden>
+      <p class="summary">Recipes you save stay here for good. Claude brings a couple back now and then, with your notes, and leans new picks toward what you save. Tap the star on any recipe to save it.</p>
+      <div class="filters" id="fFilters"></div>
+      <p class="status" id="fStatus">Loading favorites…</p>
+      <div class="panel" id="fList" hidden></div>
+      <section class="block" id="takeBlock" hidden>
+        <h2><span>What Claude takes from these</span></h2>
+        <div class="take"><p id="takeText"></p></div>
+      </section>
+    </div>
+
+    <div id="tab-discussion" data-panel="discussion" hidden>
+      <form class="panel composer" id="postForm" autocomplete="off">
+        <label for="postText" class="hint">Ask a question about this week's food, or leave a note for next week's plan.</label>
+        <textarea id="postText" rows="3" maxlength="2000" placeholder="e.g. Can I swap the trout for salmon? / Make the tacos again / We're at a wedding Saturday"></textarea>
+        <div class="crow">
+          <select id="postTag" aria-label="Kind of post">
+            <option value="question">Question (Claude answers)</option>
+            <option value="note">Note for next week's plan</option>
+            <option value="feedback">Feedback on this week</option>
+            <option value="chat">Just between us</option>
+          </select>
+          <button class="btn primary" type="submit" id="postBtn">Post</button>
+        </div>
+        <span class="hint" id="postHint"></span>
+      </form>
+      <p class="status" id="dStatus">Loading the discussion…</p>
+      <div class="thread" id="thread"></div>
+    </div>
+
+    <div id="tab-preferences" data-panel="preferences" hidden>
+      <section class="block">
+        <h2><span>How this works</span></h2>
+        <div class="panel howto">
+          <ol>
+            <li>Each week Claude plans the meals, fills in Groceries and Recipes here, and emails everyone on the list a link.</li>
+            <li>Before the next plan runs, post anything for next week in Discussion as a <b>Note for next week's plan</b> (restaurant nights, guests, cravings, food on hand, a different store) or as <b>Feedback on this week</b> (make again, skip next time, portions).</li>
+            <li>The preferences below apply every week until you change them.</li>
+          </ol>
+        </div>
+      </section>
+      <section class="block">
+        <h2><span>Standing preferences</span><button class="btn editPrefs" type="button" id="editPrefs">Edit</button></h2>
+        <p class="status" id="pStatus">Loading preferences…</p>
+        <div class="panel" id="prefs" hidden></div>
+        <div class="tools" id="prefActions" hidden>
+          <button class="btn primary" type="button" id="savePrefs">Save preferences</button>
+          <button class="btn" type="button" id="cancelPrefs">Cancel</button>
+          <span class="hint" id="prefHint">One line per bullet.</span>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="scrim" id="rmScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rmTitle">
+    <h3 id="rmTitle">Remove from favorites?</h3>
+    <p id="rmText"></p>
+    <div>
+      <div class="hint">Why? (optional, helps next week's plan)</div>
+      <div class="reasons" id="rmReasons"></div>
+    </div>
+    <div class="acts">
+      <button class="btn" type="button" id="rmKeep">Keep it</button>
+      <button class="btn remove" type="button" id="rmGo">Remove</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ["Produce", "Meat and seafood", "Tofu", "Dairy and eggs", "Refrigerated", "Bread, tortillas, and grains", "Pantry", "Frozen", "Household", "Other"];
+const KINDS = ["Dinner", "Breakfast", "Quick lunch"];
+const KIND_LABEL = { "Dinner": "Dinners", "Breakfast": "Breakfasts", "Quick lunch": "Quick lunches" };
+const TAG_LABEL = { question: "Question", note: "Note for next week", feedback: "Feedback", chat: "Chat", answer: "Answer", update: "Plan update" };
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>';
+const REASONS = ["Tired of it for now", "Didn't like it", "Too much work"];
+const CHECK = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+let db = null, user = null, sample = null, uid = null, readOnly = false;
+let items = [], recipes = [], posts = [], favorites = [], meta = null, prefs = null;
+const loaded = { items: false, recipes: false, posts: false, prefs: false, favorites: false };
+const pending = new Set();
+let profiles = {};
+SECTIONS.forEach(s => { const o = el("option", null, s); o.value = s; $("addSection").appendChild(o); });
+$("addSection").value = "Other";
+
+/* ---------- tabs ---------- */
+const TABS = ["groceries", "recipes", "discussion", "preferences", "favorites"];
+function showTab() {
+  const t = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "groceries";
+  document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== t; });
+  document.querySelectorAll("nav a").forEach(a => { if (a.dataset.tab === t) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+}
+window.addEventListener("hashchange", () => { showTab(); window.scrollTo(0, 0); });
+document.querySelectorAll("nav a").forEach(a => a.addEventListener("click", () => { if (location.hash === a.getAttribute("href")) window.scrollTo(0, 0); }));
+showTab();
+
+function setReadOnly() { readOnly = true; $("app").classList.add("readonly"); }
+function fmtWhen(iso) {
+  try { const d = new Date(iso); return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; }
+}
+async function loadProfiles(ids) {
+  const need = ids.filter(i => i && !(i in profiles));
+  if (!user || !need.length) return;
+  try { Object.assign(profiles, await user.profiles(need) || {}); } catch (e) {}
+}
+function whoName(id) { if (!id) return "Someone"; if (id === uid) return "You"; return (profiles[id] && profiles[id].name) || "Someone"; }
+
+function renderHeader() {
+  if (meta && meta.week) $("week").textContent = "Week of " + meta.week + (meta.store ? " · " + meta.store : "");
+  const left = items.filter(i => !i.done).length;
+  $("bGroc").textContent = items.length ? String(left) : "";
+  $("bRec").textContent = recipes.length ? String(recipes.length) : "";
+  $("bFav").textContent = favorites.length ? String(favorites.length) : "";
+  const wk = meta && meta.week;
+  const n = wk ? posts.filter(p => p.week === wk).length : 0;
+  $("bDisc").textContent = n ? String(n) : "";
+}
+
+/* ---------- groceries ---------- */
+function sectionIndex(s) { const i = SECTIONS.indexOf(s); return i === -1 ? SECTIONS.length : i; }
+function renderOrder() {
+  const svc = meta && meta.orderService, url = meta && meta.orderUrl;
+  const bar = $("orderBar");
+  bar.hidden = !(svc || url);
+  if (bar.hidden) return;
+  const link = $("orderLink");
+  if (url && /^https:\/\//.test(url)) {
+    link.hidden = false; link.href = url; link.textContent = "Review your " + (svc || "delivery") + " cart";
+    $("orderText").textContent = (meta.orderNote || ("Claude put this week's items in your " + (svc || "delivery") + " cart. Review it there and check out when you're ready."));
+  } else {
+    link.hidden = true;
+    $("orderText").textContent = meta.orderNote || ("Shopping with " + svc + "? Copy the list and paste it into the app's search or a shopping list.");
+  }
+}
+function listText() {
+  return items.filter(i => !i.done).sort((a, b) => sectionIndex(a.section) - sectionIndex(b.section) || ((a.order || 0) - (b.order || 0)))
+    .map(i => i.name + (i.qty ? " (" + i.qty + ")" : "")).join("\n");
+}
+$("copyList").addEventListener("click", async () => {
+  const text = listText();
+  try { await navigator.clipboard.writeText(text); $("copyHint").textContent = "Copied the items you still need."; $("copyBox").hidden = true; }
+  catch (e) { const box = $("copyBox"); box.value = text; box.hidden = false; box.focus(); box.select(); $("copyHint").textContent = "Select all and copy."; }
+});
+async function renderGroceries() {
+  renderOrder();
+  const total = items.length, done = items.filter(i => i.done).length;
+  $("count").textContent = done + " of " + total;
+  $("barFill").style.width = total ? (100 * done / total) + "%" : "0";
+  if (!loaded.items) return;
+  const st = $("gStatus");
+  if (!total) { st.hidden = false; st.innerHTML = "<strong>The list is empty.</strong> The next weekly plan fills it, or add an item above."; $("gList").replaceChildren(); return; }
+  st.hidden = true;
+  await loadProfiles([...new Set(items.filter(i => i.done && i.doneBy && i.doneBy !== "fridge").map(i => i.doneBy))]);
+  const groups = new Map();
+  items.slice().sort((a, b) => sectionIndex(a.section) - sectionIndex(b.section) || ((a.done ? 1 : 0) - (b.done ? 1 : 0)) || ((a.order || 0) - (b.order || 0)))
+    .forEach(i => { const s = SECTIONS.includes(i.section) ? i.section : "Other"; if (!groups.has(s)) groups.set(s, []); groups.get(s).push(i); });
+  const frag = document.createDocumentFragment();
+  for (const [sec, list] of groups) {
+    const visible = list;
+    const left = list.filter(i => !i.done).length;
+    const s = el("section", "block");
+    const h = el("h2"); h.append(el("span", null, sec), el("span", "n", left ? left + " left" : "done"));
+    const ul = el("ul", "items panel");
+    for (const it of visible) {
+      const li = el("li", it.done ? "done" : "");
+      const b = el("button", "check"); b.type = "button"; b.innerHTML = CHECK;
+      b.setAttribute("aria-label", (it.done ? "Uncheck " : "Check off ") + it.name); b.setAttribute("aria-pressed", String(!!it.done));
+      b.addEventListener("click", () => toggle(it));
+      const body = el("div", "ibody"); body.addEventListener("click", () => toggle(it));
+      const nm = el("div", "name", it.name);
+      if (it.qty) nm.appendChild(el("span", "qty", ", " + it.qty));
+      body.appendChild(nm);
+      const m = el("div", "meta");
+      if (it.label) m.appendChild(el("span", "chip", it.label));
+      if (it.done && it.doneBy === "fridge") m.appendChild(el("span", "by", "In the fridge" + (it.fridgeNote ? ": " + it.fridgeNote : "")));
+      else if (it.done && it.doneBy) m.appendChild(el("span", "by", "Got it: " + (it.doneBy === uid ? "you" : whoName(it.doneBy))));
+      if (it.qtyNote) m.appendChild(el("span", "by", it.qtyNote));
+      if (m.childNodes.length) body.appendChild(m);
+      li.append(b, body);
+      if (it.source === "added") {
+        const rm = el("button", "rm", "×"); rm.type = "button"; rm.setAttribute("aria-label", "Remove " + it.name);
+        rm.addEventListener("click", () => removeItem(it));
+        li.appendChild(rm);
+      }
+      ul.appendChild(li);
+    }
+    ul.appendChild(sectionAdd(sec));
+    s.append(h, ul); frag.appendChild(s);
+  }
+  $("gList").replaceChildren(frag);
+}
+function sectionAdd(sec) {
+  const li = el("li", "secadd");
+  const f = el("form"); f.style.display = "contents"; f.autocomplete = "off";
+  const inp = el("input"); inp.type = "text"; inp.maxLength = 120; inp.placeholder = "Add to " + sec; inp.setAttribute("aria-label", "Add an item to " + sec);
+  inp.id = "add-" + sec.replace(/[^a-z]/gi, "");
+  const b = el("button", "btn", "Add"); b.type = "submit";
+  f.addEventListener("submit", ev => { ev.preventDefault(); addItem(inp.value.trim(), sec, inp); });
+  f.append(inp, b); li.appendChild(f);
+  return li;
+}
+async function addItem(name, section, input) {
+  if (!name || !db || readOnly) return;
+  if (input) input.value = "";
+  try { await db.collection("items").add({ name, qty: "", label: "", section, order: Date.now(), done: false, doneBy: null, source: "added", addedBy: uid || null, week: (meta && meta.week) || "" }); }
+  catch (e) { if (input) input.value = name; if (e && e.code === "invalid_argument") setReadOnly(); }
+}
+async function toggle(it) {
+  if (!db || readOnly || pending.has(it.id)) return;
+  pending.add(it.id);
+  const next = !it.done;
+  try { await db.doc("items/" + it.id).update({ done: next, doneBy: next ? (uid || null) : null, doneAt: next ? new Date().toISOString() : null }); }
+  catch (e) { if (e && e.code === "invalid_argument") setReadOnly(); }
+  finally { pending.delete(it.id); }
+}
+async function removeItem(it) {
+  if (!db || readOnly) return;
+  try { await db.doc("items/" + it.id).delete(); } catch (e) { if (e && e.code === "invalid_argument") setReadOnly(); }
+}
+$("addForm").addEventListener("submit", ev => { ev.preventDefault(); addItem($("addName").value.trim(), $("addSection").value, $("addName")); });
+
+/* ---------- recipes ---------- */
+function renderRecipes() {
+  $("rSummary").textContent = (meta && meta.summary) || "";
+  if (!loaded.recipes) return;
+  const st = $("rStatus");
+  const oh = (meta && meta.onHand) || "";
+  $("onHand").textContent = oh; $("onHandBlock").hidden = !oh;
+  if (!recipes.length) { st.hidden = false; st.innerHTML = "<strong>No recipes yet.</strong> The next weekly plan adds them here."; $("rGroups").replaceChildren(); return; }
+  st.hidden = true;
+  const sorted = recipes.slice().sort((a, b) => (KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind)) || ((a.order || 0) - (b.order || 0)));
+  const open = new Set([...document.querySelectorAll("details.recipe[open]")].map(d => d.id));
+  const groupsWrap = document.createDocumentFragment();
+  for (const kind of KINDS) {
+    const list = sorted.filter(r => r.kind === kind);
+    if (!list.length) continue;
+    const sec = el("section", "block"); const h = el("h2"); h.append(el("span", null, KIND_LABEL[kind]), el("span", "n", String(list.length))); sec.appendChild(h);
+    const panel = el("div", "panel");
+    for (const r of list) { const d = recipeDetails(r); if (open.has(d.id)) d.open = true; panel.appendChild(d); }
+    sec.appendChild(panel); groupsWrap.appendChild(sec);
+  }
+  $("rGroups").replaceChildren(groupsWrap);
+  const prep = (meta && Array.isArray(meta.prepAhead)) ? meta.prepAhead : [];
+  $("prepBlock").hidden = !prep.length;
+  $("prepList").replaceChildren(...prep.map(p => el("li", null, p)));
+}
+function recipeDetails(r, opts) {
+  opts = opts || {};
+  const d = el("details", "recipe"); d.id = "r-" + r.id; d.style.scrollMarginTop = "130px";
+  const s = el("summary");
+  const t = el("span", "t", r.title);
+  const sub = (opts.sub != null ? opts.sub : [r.cuisine, r.protein, r.time].filter(Boolean).join(" · "));
+  if (sub) t.appendChild(el("span", "s", sub));
+  const fav = favFor(r);
+  s.append(t, starBtn(r, fav), el("span", "chev", "›")); d.appendChild(s);
+  const b = el("div", "rbody");
+  if (fav && opts.savedPanel !== false) b.appendChild(savedPanel(fav));
+  const chips = el("div", "times");
+  [r.time, r.serves].filter(Boolean).forEach(c => chips.appendChild(el("span", "chip", c)));
+  if (chips.childNodes.length) b.appendChild(chips);
+  if (r.intro) b.appendChild(el("p", null, r.intro));
+  if (Array.isArray(r.ingredients) && r.ingredients.length) { b.appendChild(el("h4", null, "Ingredients")); const ul = el("ul"); r.ingredients.forEach(x => ul.appendChild(el("li", null, x))); b.appendChild(ul); }
+  if (Array.isArray(r.steps) && r.steps.length) { b.appendChild(el("h4", null, "Steps")); const ol = el("ol"); r.steps.forEach(x => ol.appendChild(el("li", null, x))); b.appendChild(ol); }
+  if (r.baby) { const bb = el("div", "baby"); bb.append(el("b", null, "For the little one: "), document.createTextNode(r.baby)); b.appendChild(bb); }
+  d.appendChild(b);
+  return d;
+}
+
+/* ---------- favorites ---------- */
+function favId(title) { return String(title || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "recipe"; }
+function favFor(r) {
+  if (r.favoriteId) { const f = favorites.find(x => x.id === r.favoriteId); if (f) return f; }
+  const id = favId(r.title); return favorites.find(x => x.id === id) || null;
+}
+function fmtDay(iso) { try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }); } catch (e) { return ""; } }
+function savedLine(f) { return "Saved " + fmtDay(f.savedAt) + " by " + (f.savedBy === uid ? "you" : whoName(f.savedBy)); }
+function starBtn(r, fav) {
+  const b = el("button", "star"); b.type = "button"; b.innerHTML = STAR;
+  b.setAttribute("aria-pressed", String(!!fav));
+  b.setAttribute("aria-label", (fav ? "Remove " : "Save ") + r.title + (fav ? " from favorites" : " to favorites"));
+  if (fav) b.querySelector("path").setAttribute("fill", "currentColor");
+  b.addEventListener("click", ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    if (!db || readOnly) return;
+    if (fav) askRemove(fav); else saveFavorite(r, b);
+  });
+  return b;
+}
+async function saveFavorite(r, btn) {
+  const id = r.favoriteId || favId(r.title);
+  if (pending.has("fav-" + id)) return;
+  pending.add("fav-" + id);
+  const keep = ["title", "kind", "cuisine", "protein", "time", "serves", "intro", "ingredients", "steps", "baby"];
+  const doc = { note: "", savedAt: new Date().toISOString(), savedBy: uid || null, fromWeek: r.week || (meta && meta.week) || "", timesPlanned: 1, lastPlanned: r.week || (meta && meta.week) || "" };
+  keep.forEach(k => { if (r[k] != null) doc[k] = r[k]; });
+  try {
+    await db.doc("favorites/" + id).set(doc);
+    const d = btn && btn.closest("details"); if (d) d.open = true;
+  } catch (e) { if (e && e.code === "invalid_argument") setReadOnly(); }
+  finally { pending.delete("fav-" + id); }
+}
+function savedPanel(f) {
+  const box = el("div", "saved");
+  box.appendChild(el("div", "h", "Saved to favorites · " + savedLine(f).replace(/^Saved /, "")));
+  const lid = "note-" + f.id + "-" + Math.random().toString(36).slice(2, 7);
+  const lab = el("label", null, "Note for next time (optional)"); lab.setAttribute("for", lid);
+  const inp = el("input"); inp.type = "text"; inp.id = lid; inp.maxLength = 300; inp.value = f.note || "";
+  inp.placeholder = "e.g. Double the sauce, less salt";
+  const hint = el("span", "hint", "Claude may bring this back in a future week, with your note.");
+  const save = async () => {
+    const v = inp.value.trim(); if (v === (f.note || "") || !db || readOnly) return;
+    try { await db.doc("favorites/" + f.id).update({ note: v, noteBy: uid || null, noteAt: new Date().toISOString() }); hint.textContent = "Note saved."; }
+    catch (e) { hint.textContent = "Couldn't save the note. Try again."; }
+  };
+  inp.addEventListener("change", save);
+  inp.addEventListener("keydown", ev => { if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); } });
+  box.append(lab, inp, hint);
+  if (readOnly && f.note) { box.replaceChildren(el("div", "h", savedLine(f)), el("p", "fnote", f.note)); }
+  return box;
+}
+let rmTarget = null, rmReason = "", lastFocus = null;
+function askRemove(f) {
+  rmTarget = f; rmReason = ""; lastFocus = document.activeElement;
+  $("rmTitle").textContent = "Remove " + f.title + " from favorites?";
+  $("rmText").textContent = savedLine(f) + ". " + (f.note ? "Your note goes with it, and Claude" : "Claude") + " stops bringing it back. Favorites are shared, so this removes it for everyone in the app.";
+  $("rmReasons").replaceChildren(...REASONS.map(t => {
+    const b = el("button", "btn", t); b.type = "button"; b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => { rmReason = rmReason === t ? "" : t; $("rmReasons").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x.textContent === rmReason))); });
+    return b;
+  }));
+  $("rmScrim").hidden = false; $("rmKeep").focus();
+}
+function closeRemove() { $("rmScrim").hidden = true; rmTarget = null; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+$("rmKeep").addEventListener("click", closeRemove);
+$("rmScrim").addEventListener("click", ev => { if (ev.target === $("rmScrim")) closeRemove(); });
+$("rmScrim").addEventListener("keydown", ev => { if (ev.key === "Escape") closeRemove(); });
+$("rmGo").addEventListener("click", async () => {
+  const f = rmTarget; if (!f || !db || readOnly) return closeRemove();
+  $("rmGo").disabled = true;
+  try {
+    await db.doc("favorites/" + f.id).delete();
+    if (rmReason) await db.collection("posts").add({ text: "Removed \u201c" + f.title + "\u201d from favorites: " + rmReason + ".", tag: "feedback", authorId: uid || null, author: "person", createdAt: new Date().toISOString(), week: (meta && meta.week) || "", favoriteId: f.id, reason: rmReason });
+  } catch (e) { if (e && e.code === "invalid_argument") setReadOnly(); }
+  finally { $("rmGo").disabled = false; closeRemove(); }
+});
+let favFilter = "All";
+async function renderFavorites() {
+  const take = (meta && meta.favoritesTake) || "";
+  $("takeText").textContent = take; $("takeBlock").hidden = !take || !favorites.length;
+  if (!loaded.favorites) return;
+  const st = $("fStatus"), list = $("fList");
+  if (!favorites.length) { st.hidden = false; st.innerHTML = "<strong>No favorites yet.</strong> Tap the star on a recipe you love and it will be saved here."; list.hidden = true; $("fFilters").replaceChildren(); return; }
+  st.hidden = true; list.hidden = false;
+  await loadProfiles([...new Set(favorites.map(f => f.savedBy).filter(Boolean))]);
+  const kinds = KINDS.filter(k => favorites.some(f => f.kind === k));
+  if (favFilter !== "All" && !kinds.includes(favFilter)) favFilter = "All";
+  const btns = ["All"].concat(kinds).map(k => {
+    const n = k === "All" ? favorites.length : favorites.filter(f => f.kind === k).length;
+    const b = el("button", "btn", (k === "All" ? "All" : KIND_LABEL[k]) + " " + n); b.type = "button";
+    b.setAttribute("aria-pressed", String(favFilter === k));
+    b.addEventListener("click", () => { favFilter = k; renderFavorites(); });
+    return b;
+  });
+  $("fFilters").replaceChildren(...(kinds.length > 1 ? btns : []));
+  const open = new Set([...list.querySelectorAll("details.recipe[open]")].map(d => d.id));
+  const shown = favorites.filter(f => favFilter === "All" || f.kind === favFilter).sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+  list.replaceChildren(...shown.map(f => {
+    const sub = [f.kind === "Dinner" ? f.cuisine : f.kind, f.protein, f.time].filter(Boolean).join(" · ");
+    const d = recipeDetails(Object.assign({}, f, { favoriteId: f.id }), { sub, savedPanel: false });
+    d.id = "f-" + f.id; if (open.has(d.id)) d.open = true;
+    const t = d.querySelector("summary .t");
+    if (f.note) { const n = el("span", "fnote", "\u201c" + f.note + "\u201d"); n.style.display = "block"; t.appendChild(n); }
+    const chips = el("span", "times"); chips.style.marginTop = "6px"; chips.style.fontFamily = "var(--font-body)"; chips.style.fontWeight = "400";
+    chips.appendChild(el("span", "chip", savedLine(f)));
+    if (f.lastPlanned) chips.appendChild(el("span", "chip", (f.timesPlanned > 1 ? "Planned " + f.timesPlanned + " times, last week of " : "Last planned week of ") + f.lastPlanned));
+    t.appendChild(chips);
+    const body = d.querySelector(".rbody:last-child"); if (body) body.prepend(savedPanel(f));
+    return d;
+  }));
+}
+
+/* ---------- discussion ---------- */
+async function renderDiscussion() {
+  if (!loaded.posts) return;
+  const st = $("dStatus");
+  if (!posts.length) { st.hidden = false; st.innerHTML = "<strong>No posts yet.</strong> Ask a question about this week's food, or leave a note for next week."; $("thread").replaceChildren(); return; }
+  st.hidden = true;
+  await loadProfiles([...new Set(posts.map(p => p.authorId).filter(Boolean))]);
+  const byId = new Map(posts.map(p => [p.id, p]));
+  const tops = posts.filter(p => !p.replyTo || !byId.has(p.replyTo)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const frag = document.createDocumentFragment();
+  let lastWeek = null;
+  for (const p of tops) {
+    if (p.week && p.week !== lastWeek) { frag.appendChild(el("p", "wk", "Week of " + p.week)); lastWeek = p.week; }
+    frag.appendChild(postEl(p, false));
+    posts.filter(r => r.replyTo === p.id).sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))).forEach(r => frag.appendChild(postEl(r, true)));
+  }
+  $("thread").replaceChildren(frag);
+}
+function postEl(p, isReply) {
+  const isClaude = p.author === "claude";
+  const box = el("article", "post" + (isClaude ? " claude" : "") + (isReply ? " reply" : ""));
+  const h = el("div", "phead");
+  h.append(el("span", "who", isClaude ? "Claude" : whoName(p.authorId)));
+  if (p.tag && p.tag !== "chat") h.append(el("span", "chip", TAG_LABEL[p.tag] || p.tag));
+  if (p.createdAt) h.append(el("span", null, fmtWhen(p.createdAt)));
+  box.append(h, el("div", "ptext", p.text || ""));
+  return box;
+}
+function contextForClaude() {
+  const lines = [];
+  if (meta) lines.push("Week of " + (meta.week || "") + ". " + (meta.summary || ""));
+  for (const r of recipes) {
+    lines.push("\n## " + r.title + " (" + [r.kind, r.cuisine, r.protein].filter(Boolean).join(", ") + ")");
+    if (r.ingredients) lines.push("Ingredients: " + r.ingredients.join("; "));
+    if (r.steps) lines.push("Steps: " + r.steps.join(" "));
+    if (r.baby) lines.push("Child version: " + r.baby);
+  }
+  if (favorites.length) {
+    lines.push("\n# Saved favorite recipes");
+    for (const f of favorites) lines.push("- " + f.title + " (" + [f.kind, f.cuisine, f.protein].filter(Boolean).join(", ") + ")" + (f.note ? ": " + f.note : ""));
+  }
+  if (prefs && Array.isArray(prefs.sections)) {
+    lines.push("\n# Household standing preferences");
+    for (const s of prefs.sections) lines.push(s.title + ": " + (s.items || []).join("; "));
+  }
+  return lines.join("\n").slice(0, 60000);
+}
+$("postForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const text = $("postText").value.trim(), tag = $("postTag").value;
+  if (!text || !db || readOnly) return;
+  $("postBtn").disabled = true; $("postHint").textContent = "";
+  let ref;
+  try {
+    ref = await db.collection("posts").add({ text, tag, authorId: uid || null, author: "person", createdAt: new Date().toISOString(), week: (meta && meta.week) || "" });
+    $("postText").value = "";
+  } catch (e) {
+    $("postHint").textContent = "Couldn't post. Check your connection and try again.";
+    $("postBtn").disabled = false; return;
+  }
+  $("postBtn").disabled = false;
+  if (tag !== "question") { if (tag === "note" || tag === "feedback") $("postHint").textContent = "Saved. The next weekly plan will read this."; return; }
+  if (!sample) { $("postHint").textContent = "Claude can't answer from this view. Your question is saved for the other person to see."; return; }
+  $("postHint").textContent = "Claude is thinking…";
+  try {
+    const prompt = "You are helping a household with this week's home-cooked meal plan. Their household details are in the standing preferences below. "
+      + "Answer the question below in plain, friendly, concise language (under 150 words unless a recipe change needs more). "
+      + "Respect the standing preferences and any sourcing rules. If the question is about a baby or child, keep feeding safety in mind.\n\n"
+      + "# This week's plan\n" + contextForClaude() + "\n\n# Question\n" + text;
+    const { text: answer } = await sample(prompt, { cache: false });
+    await db.collection("posts").add({ text: answer.trim(), tag: "answer", author: "claude", authorId: null, replyTo: ref.id, createdAt: new Date().toISOString(), week: (meta && meta.week) || "" });
+    $("postHint").textContent = "";
+  } catch (e) {
+    const code = e && e.code;
+    $("postHint").textContent = code === "not_granted" || code === "sampling_disabled" ? "Claude isn't allowed to answer here. Your question is saved."
+      : code === "rate_limited" ? "Claude is busy right now. Your question is saved; ask again in a bit."
+      : "Claude couldn't answer this time. Your question is saved.";
+    if (code === "not_granted" || code === "sampling_disabled") sample = null;
+  }
+});
+
+/* ---------- preferences ---------- */
+let editing = false;
+function renderPrefs() {
+  if (!loaded.prefs) return;
+  const st = $("pStatus"), box = $("prefs");
+  if (!prefs || !Array.isArray(prefs.sections) || !prefs.sections.length) { st.hidden = false; st.textContent = "No standing preferences saved yet."; box.hidden = true; return; }
+  st.hidden = true; box.hidden = false;
+  if (editing) return;
+  box.replaceChildren(...prefs.sections.map(s => {
+    const d = el("div", "pref"); d.appendChild(el("h3", null, s.title));
+    const ul = el("ul"); (s.items || []).forEach(x => ul.appendChild(el("li", null, x))); d.appendChild(ul); return d;
+  }));
+}
+$("editPrefs").addEventListener("click", () => {
+  if (!prefs || readOnly) return;
+  editing = true; $("prefActions").hidden = false; $("editPrefs").hidden = true;
+  $("prefs").replaceChildren(...prefs.sections.map((s, i) => {
+    const d = el("div", "pref"); const lab = el("label", null); lab.setAttribute("for", "pref-" + i);
+    lab.appendChild(el("h3", null, s.title)); d.appendChild(lab);
+    const ta = el("textarea"); ta.id = "pref-" + i; ta.rows = Math.max(2, (s.items || []).length + 1); ta.value = (s.items || []).join("\n");
+    d.appendChild(ta); return d;
+  }));
+});
+function stopEditing() { editing = false; $("prefActions").hidden = true; $("editPrefs").hidden = false; renderPrefs(); }
+$("cancelPrefs").addEventListener("click", stopEditing);
+$("savePrefs").addEventListener("click", async () => {
+  const sections = prefs.sections.map((s, i) => ({ title: s.title, items: $("pref-" + i).value.split("\n").map(x => x.trim()).filter(Boolean) }));
+  $("savePrefs").disabled = true;
+  try { await db.doc("prefs/standing").set({ sections, updatedAt: new Date().toISOString(), updatedBy: uid || null }); stopEditing(); }
+  catch (e) { $("prefHint").textContent = "Couldn't save. Try again."; }
+  finally { $("savePrefs").disabled = false; }
+});
+
+/* ---------- boot ---------- */
+function renderAll() { renderHeader(); renderGroceries(); renderRecipes(); renderFavorites(); renderDiscussion(); renderPrefs(); }
+(async () => {
+  [db, user, sample] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("sample")]);
+  if (!db) {
+    ["gStatus", "rStatus", "fStatus", "dStatus", "pStatus"].forEach(i => { $(i).textContent = "Sign in to Claude to see this week's plan."; });
+    setReadOnly(); return;
+  }
+  if (user) { try { uid = await user.id(); } catch (e) {} }
+  const timer = setTimeout(() => {
+    if (!loaded.items) $("gStatus").textContent = "Can't reach the list yet. It will appear when the connection returns.";
+    if (!loaded.recipes) $("rStatus").textContent = "Can't reach the recipes yet.";
+    if (!loaded.posts) $("dStatus").textContent = "Can't reach the discussion yet.";
+  }, 10000);
+  const fail = key => () => { loaded[key] = true; clearTimeout(timer); renderAll(); };
+  const seen = (key, snap) => { if (!snap.metadata.fromCache || snap.size) loaded[key] = true; if (loaded.items && loaded.recipes && loaded.posts) clearTimeout(timer); };
+  db.collection("items").onSnapshot(snap => { items = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); seen("items", snap); renderHeader(); renderGroceries(); }, fail("items"));
+  db.collection("recipes").onSnapshot(snap => { recipes = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); seen("recipes", snap); renderHeader(); renderRecipes(); }, fail("recipes"));
+  db.collection("posts").orderBy("createdAt", "desc").limit(200).onSnapshot(snap => { posts = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); seen("posts", snap); renderHeader(); renderDiscussion(); }, fail("posts"));
+  db.collection("favorites").onSnapshot(snap => { favorites = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); if (!snap.metadata.fromCache || snap.size) loaded.favorites = true; renderHeader(); renderRecipes(); renderFavorites(); }, () => { loaded.favorites = true; renderFavorites(); });
+  db.doc("meta/current").onSnapshot(snap => { meta = snap.exists ? snap.data() : null; renderAll(); }, () => {});
+  db.doc("prefs/standing").onSnapshot(snap => { prefs = snap.exists ? snap.data() : null; if (!snap.metadata.fromCache) loaded.prefs = true; else if (prefs) loaded.prefs = true; renderPrefs(); }, () => { loaded.prefs = true; renderPrefs(); });
+})();
+</script>
