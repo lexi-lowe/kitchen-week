@@ -12,9 +12,18 @@ Kitchen Week sets up a weekly meal planner for your household. Once a week, Clau
 - **Variety built in:** no dinner repeats within your repeat window, a different cuisine each night, rotating proteins, cooking styles, and starches, and seasonal produce for where you live.
 - **Delivery cart (optional):** if you shop on Instacart and connect the Instacart connector, each plan adds the week's groceries to your Instacart cart for you to review. Claude never places, pays for, or checks out an order.
 
+## Install
+
+In Claude, add the marketplace `lexi-lowe/kitchen-week` (Customize, then Add marketplace) and install Kitchen Week from it. In Claude Code:
+
+```
+/plugin marketplace add lexi-lowe/kitchen-week
+/plugin install kitchen-week@kitchen-week
+```
+
 ## Set it up
 
-Install Kitchen Week from the Claude directory, then ask Claude: "Set up my weekly meal planner." Setup takes three short replies: one typed message with the basics, one round of multiple-choice questions, and a confirmation. Claude then publishes your app, saves your preferences, schedules the weekly plan, and can make this week's plan right away. Once the first plan is in, Claude offers an optional round to tune it: match meals to the weather, use up last week's leftovers, and add sourcing rules or goals.
+Once it's installed, ask Claude: "Set up my weekly meal planner." Setup takes three short replies: one typed message with the basics, one round of multiple-choice questions, and a confirmation. Claude then publishes your app, saves your preferences, schedules the weekly plan, and can make this week's plan right away. Once the first plan is in, Claude offers an optional round to tune it: match meals to the weather, use up last week's leftovers, and add sourcing rules or goals.
 
 ## Updating
 
