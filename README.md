@@ -16,6 +16,10 @@ Kitchen Week sets up a weekly meal planner for your household. Once a week, Clau
 
 After installing, ask Claude: "Set up my weekly meal planner." Setup takes three short replies: one typed message with the basics, one round of multiple-choice questions, and a confirmation. Claude then publishes your app, saves your preferences, schedules the weekly plan, and can make this week's plan right away. Once the first plan is in, Claude offers an optional round to tune it: match meals to the weather, use up last week's leftovers, and add sourcing rules or goals.
 
+## Updating
+
+A new version of Kitchen Week doesn't change an app you already set up; your app and weekly task are your own copies. To get new features, ask Claude: "Upgrade my meal planner." Claude finds your app and weekly task, shows what's new, and updates both after one confirmation. Your groceries, recipes, discussion, preferences, and your own changes stay.
+
 ## Requirements
 
 - A Claude plan where Claude can publish hosted apps (artifacts) and run scheduled tasks, such as Cowork. The skill checks for these first and tells you if something is missing.

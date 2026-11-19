@@ -81,4 +81,6 @@ The app is the Claude artifact {{APP_URL}}. Read and write its database with the
    If step 7 failed, still send the email but say the app could not be updated this week, include the dinners, the full grocery list, and the recipes in the email, and send a PushNotification explaining what failed.
 
 9. Reply with the subject line sent, the recipients, the dinners with cuisines and proteins, which saved favorites came back and how the new picks used the favorites patterns, which posts you used, how many recipes and grocery items went into the app (and how many added grocery items were kept), and whether a delivery cart was drafted (items added, items not found).
+
+Kitchen Week prompt version 1.1.0.
 ---
