@@ -12,9 +12,18 @@ Kitchen Week sets up a weekly meal planner for your household. Once a week, Clau
 - **Variety built in:** no dinner repeats within your repeat window, a different cuisine each night, rotating proteins, cooking styles, and starches, and seasonal produce for where you live.
 - **Delivery cart (optional):** if you shop on Instacart and connect the Instacart connector, each plan adds the week's groceries to your Instacart cart for you to review. Claude never places, pays for, or checks out an order.
 
+## Install
+
+In Claude, add the marketplace `lexi-lowe/kitchen-week` (Customize, then Add marketplace) and install Kitchen Week from it. In Claude Code:
+
+```
+/plugin marketplace add lexi-lowe/kitchen-week
+/plugin install kitchen-week@kitchen-week
+```
+
 ## Set it up
 
-After installing, ask Claude: "Set up my weekly meal planner." Setup takes three short replies: one typed message with the basics, one round of multiple-choice questions, and a confirmation. Claude then publishes your app, saves your preferences, schedules the weekly plan, and can make this week's plan right away. Once the first plan is in, Claude offers an optional round to tune it: match meals to the weather, use up last week's leftovers, and add sourcing rules or goals.
+Once it's installed, ask Claude: "Set up my weekly meal planner." Setup takes three short replies: one typed message with the basics, one round of multiple-choice questions, and a confirmation. Claude then publishes your app, saves your preferences, schedules the weekly plan, and can make this week's plan right away. Once the first plan is in, Claude offers an optional round to tune it: match meals to the weather, use up last week's leftovers, and add sourcing rules or goals.
 
 ## Updating
 
@@ -38,5 +47,6 @@ This plugin contains one skill and an HTML app template. It runs no scripts, sta
   - The weekly plan runs as a scheduled task on your Claude account.
   - Gmail: one email per week to the recipients you choose, sent from your own Gmail account through the Gmail connector.
   - Instacart (only if you connect it): grocery item names and quantities, to search products and fill your cart at the store you chose.
-  - Claude: questions asked in the Discussion tab, together with that week's recipes and your preferences, are sent to Claude on the asking person's own Claude account to get an answer.
-- **Removing it:** delete the app and its "Weekly meal plan" scheduled task from your Claude account at any time.
+  - Claude: questions asked in the Discussion tab, together with that week's recipes, saved favorites, and your preferences, are sent to Claude on the asking person's own Claude account to get an answer.
+  - Web search (only if you turn on "Match the weather"): each weekly run searches the web for your city's forecast. Only the city is used in the search.
+- **Removing it:** delete the app and its "Weekly meal plan: <app name>" scheduled task from your Claude account at any time.

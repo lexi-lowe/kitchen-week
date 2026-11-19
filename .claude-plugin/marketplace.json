@@ -1,0 +1,13 @@
+{
+  "name": "kitchen-week",
+  "owner": { "name": "Lexi Cardia" },
+  "metadata": { "description": "Kitchen Week, a weekly meal planner for your household." },
+  "plugins": [
+    {
+      "name": "kitchen-week",
+      "source": "./",
+      "description": "A weekly meal planner for your household: varied recipes, saved favorites, a shared grocery checklist, and a weekly email.",
+      "version": "1.1.0"
+    }
+  ]
+}
